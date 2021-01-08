@@ -17,7 +17,7 @@ The script can accept either a directory:
 
 Or a list of files:
 
-    python model_builder.py && \
+    model_builder.py && \
     -o path/to/output/directory && \
     path/to/definition_1.yaml path/to/definition_2.yaml
 
