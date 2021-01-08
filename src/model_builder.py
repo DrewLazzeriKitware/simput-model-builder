@@ -110,20 +110,21 @@ def _create_parameters(path, id, data):
 
 def _set_type(param, data):
   # Determine and set parameter type
-  param_type = list(data.get('domains', {}).keys())[0]
+  domains = data.get('domains', {}).keys()
+  param_type = next((key for key in domains if key in const.TYPES), False)
   if param_type == const.ENUM:
     param['ui'] = 'enum'
     enum_list = data.get('domains', {}).get(const.ENUM, {}).get('enum_list', [])
     param['domain'] = {val: val for val in enum_list}
   else:
-    if param_type == const.STRING:
-      param['type'] = 'string'
-    elif param_type == const.BOOL:
+    if param_type == const.BOOL:
       param['type'] = 'bool'
     elif param_type == const.DOUBLE:
       param['type'] = 'double'
     elif param_type == const.INT:
       param['type'] = 'int'
+    else:
+      param['type'] = 'string'
 
   return param_type
 
@@ -182,11 +183,13 @@ def cli(output, directory, file):
       new_views, attr_paths = create_view(data, fname)
       if new_views:
         create_dynamic_view(data, new_views, fname, attr_paths)
+      print(attr_paths)
       create_parameters(data, attr_paths)
 
   # For now core is first
   order = sorted(model['order'])
-  order.insert(0, order.pop(order.index('Core')))
+  if 'Core' in model['order']:
+    order.insert(0, order.pop(order.index('Core')))
   model['order'] = order
 
   with open(f'{output}/model.json', 'w', encoding='utf8') as f:
