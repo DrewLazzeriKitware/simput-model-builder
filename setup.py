@@ -10,6 +10,6 @@ setup(
   ],
   entry_points='''
     [console_scripts]
-    model_builder=model_builder:cli
+    model_builder=src.model_builder:cli
   ''',
 )
