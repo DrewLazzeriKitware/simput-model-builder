@@ -67,15 +67,19 @@ def create_dynamic_view(data, views, fname, attr_paths):
     create_definitions([att_name], dyn=True)
 
 
-def find_pararms(data, id='', params=None):
+def find_pararms(att, data, id='', params=None):
+  if dynamic_key(id) and not '_' in att:
+    # This parameter and its children belong in another view
+    return
+
   # Find and return all keys that require input (the model parameters)
   params = {} if params is None else params
   for key, value in data.items():
     if isinstance(value, dict):
       if 'help' not in value.keys():
-        find_pararms(value, f'{key}/', params)
+        find_pararms(att, value, f'{key}', params)
       else:
-        params[f'{id}{key}'] = value
+        params[f'{id}/{key}'] = value
   
   return params
 
@@ -151,14 +155,23 @@ def parse_key(key):
   return re.findall('\{(.*)\}', key)[0].title()
 
 
+def dynamic_key(key):
+  return key.startswith('.{')
+
+
+def general_annotation(key):
+  return key.startswith('_')
+
+
 def create_parameters(data, attr_paths):
   # Use the path associated with each attribute to find all of 
   # the attribute's parameters
   for att, path in attr_paths.items():
     params = []
     values = value_from_path(data, path.split('/'))
-    keys = [k for k in values.keys() if not k.startswith('_') or k.startswith('.{')]
-    param = find_pararms(values)
+    keys = filter(lambda x: not general_annotation(x), values.keys())
+    keys = list(filter(lambda x: not dynamic_key(x), keys))
+    param = find_pararms(att, values)
     for id, p in param.items():
       params.append(_create_parameters(path, id, p))
     model['definitions'][att]['parameters'].extend(params)
@@ -188,7 +201,6 @@ def cli(output, directory, file):
       new_views, attr_paths = create_view(data, fname)
       if new_views:
         create_dynamic_view(data, new_views, fname, attr_paths)
-      print(attr_paths)
       create_parameters(data, attr_paths)
 
   # For now core is first
