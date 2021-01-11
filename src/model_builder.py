@@ -114,7 +114,12 @@ def _set_type(param, data):
   param_type = next((key for key in domains if key in const.TYPES), False)
   if param_type == const.ENUM:
     param['ui'] = 'enum'
-    enum_list = data.get('domains', {}).get(const.ENUM, {}).get('enum_list', [])
+    enum = data.get('domains', {}).get(const.ENUM, {})
+    enum_list = enum.get('enum_list', [])
+    if all('v' in opt for opt in enum_list):
+      # For now use the most recent version if more than one listed
+      latest_version = list(enum_list.keys())[-1]
+      enum_list = enum.get('enum_list', [])[latest_version]
     param['domain'] = {val: val for val in enum_list}
   else:
     if param_type == const.BOOL:
