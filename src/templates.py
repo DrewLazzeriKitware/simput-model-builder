@@ -8,15 +8,20 @@ model = {
 }
 
 # Name Parameter
-name = {
-  'id': 'name',
-  'label': 'Name',
-  'size': 1,
-  'type': 'string'
-}
+def name_param(att_name):
+  param_id = att_name.split('/')[1]
+  param_id = param_id.replace('.{', '').replace('}', '')
+  name = [{
+    'id': f'{param_id}_',
+    'label': 'Name',
+    'size': 1,
+    'type': 'string'
+  }]
+
+  return name
 
 # Dynamic View Base
-def dyn_view(label, att_name):
+def dyn_view(att_name, label, param_id):
   view = {
     'label': label,
     'attributes': [att_name],
@@ -24,7 +29,7 @@ def dyn_view(label, att_name):
     'hooks': [
       {
         'type': 'copyParameterToViewName',
-        'attribute': f'{att_name}.name',
+        'attribute': f'{att_name}.{param_id}',
       }
     ]
   }

@@ -5,7 +5,7 @@ import copy
 import constants as const
 from pathlib import Path
 from yaml import load, Loader
-from templates import model, name, dyn_view
+from templates import model, name_param, dyn_view
 
 
 exts = ['.yaml']
@@ -41,14 +41,15 @@ def check_attributes(data, attr_paths=None):
   return atts, dyn_views, attr_paths
 
 
-def create_definitions(atts, dyn=False):
+def create_definitions(atts, path=None, dyn=False):
+  path = atts if path is None else path
   # Add new attributes to the definition
   for att in atts:
     model['definitions'][att] = {
       'label': att.replace('_', ' '),
       # Dynamic views require an extra parameter so that the 
       # user can set its name.
-      'parameters': [name] if dyn else []
+      'parameters': name_param(path) if dyn else []
     }
 
 
@@ -63,33 +64,46 @@ def create_dynamic_view(data, views, fname, attr_paths):
     att_name = label.replace(' ', '_')
     attr_paths[att_name] = path
     model['order'].append(att_name)
-    view[att_name] = dyn_view(label, att_name)
-    create_definitions([att_name], dyn=True)
+    param_id = parse_key(path.split('/')[-1])
+    view[att_name] = dyn_view(att_name, label, f'{param_id}_')
+    create_definitions([att_name], path, dyn=True)
 
 
 def find_pararms(att, data, id='', params=None):
-  if dynamic_key(id) and not '_' in att:
-    # This parameter and its children belong in another view
-    return
-
   # Find and return all keys that require input (the model parameters)
   params = {} if params is None else params
   for key, value in data.items():
     if isinstance(value, dict):
-      if 'help' not in value.keys():
-        find_pararms(att, value, f'{key}', params)
-      else:
-        params[f'{id}/{key}'] = value
+      if 'help' not in value.keys() and not dynamic_key(key):
+        find_pararms(att, value, f'{key}/', params)
+      elif dynamic_key(key) and '_' in att:
+        params[f'{parse_key(key)}_'] = value
+      elif not dynamic_key(key):
+        params[f'{id}{key}'] = value
   
   return params
 
 
 def _create_parameters(path, id, data):
   # Create the parameter and set its attributes
+
+  # '.{dynamic_key}/path' -> 'dynamic_key_/path'
+  param_id = f'{path}/{id}'
+  for key in param_id.split('/'):
+    if parse_key(key) != key:
+      param_id = param_id.replace(key, f'{parse_key(key)}_')
+
+  if param_id.endswith('_'):
+    param_id = param_id.split('/')[-1]
+
+
+  # '.{dynamic_key}/path' -> 'Dynamic Path'
   l1, *l2 = id.split('/')
-  l1 = parse_key(l1).rsplit('_', 1)[0]
+  l1 = parse_key(l1).title().rsplit('_', 1)[0]
+  label = (' ').join([l1, *l2])
+
   param = {
-    'id': f'{path}/{id}',
+    'id': param_id,
     'label': (' ').join([l1, *l2]),
     'size': 1
   }
@@ -152,7 +166,7 @@ def filter_keys(keys, delimiters, included=False):
 def parse_key(key):
   if not key.startswith('.{'):
     return key
-  return re.findall('\{(.*)\}', key)[0].title()
+  return re.findall('\{(.*)\}', key)[0]
 
 
 def dynamic_key(key):
