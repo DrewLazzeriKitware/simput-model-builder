@@ -70,37 +70,44 @@ def create_dynamic_view(data, views, fname, attr_paths):
 
 
 def find_pararms(att, data, id='', params=None):
+  if dynamic_token(id) and not dynamic_view(att):
+    return
+
   # Find and return all keys that require input (the model parameters)
   params = {} if params is None else params
   for key, value in data.items():
     if isinstance(value, dict):
-      if 'help' not in value.keys():
-        if dynamic_key(key) and '_' in att:
-          params[f'{parse_key(key)}_'] = value
-        find_pararms(att, value, f'{key}/', params)
-      elif not dynamic_key(key):
+      if leaf_token(value):
         params[f'{id}{key}'] = value
+      else:
+        if dynamic_token(key) and dynamic_view(att):
+          params[f'{parse_key(key)}_'] = value
+        elif intermediate_token(value):
+          value = value['__value__']
+          params[f'{id}{key}'] = value
+        find_pararms(att, value, f'{id}{key}/', params)
   
   return params
 
 
 def _create_parameters(path, id, data):
   # Create the parameter and set its attributes
+  label = parse_parameter_label(id)
 
-  # '.{dynamic_key}/path' -> 'dynamic_key_/path'
+  # '.{dynamic_token}/path' -> 'dynamic_key_/path'
   param_id = f'{path}/{id}'
   for key in param_id.split('/'):
     if parse_key(key) != key:
       param_id = param_id.replace(key, f'{parse_key(key)}_')
 
-  if param_id.endswith('_'):
+  leaf_token = param_id.split('/')[-1]
+
+  if general_annotation(leaf_token):
+    param_id = param_id.replace(f'/{leaf_token}', '')
+    label = param_id
+
+  if leaf_token.endswith('_'):
     param_id = param_id.split('/')[-1]
-
-
-  # '.{dynamic_key}/path' -> 'Dynamic Path'
-  l1, *l2 = id.split('/')
-  l1 = parse_key(l1).title().rsplit('_', 1)[0]
-  label = (' ').join([l1, *l2])
 
   param = {
     'id': param_id,
@@ -169,12 +176,31 @@ def parse_key(key):
   return re.findall('\{(.*)\}', key)[0]
 
 
-def dynamic_key(key):
+def dynamic_token(key):
   return key.startswith('.{')
+
+
+def dynamic_view(att):
+  return 'Properties' in att
 
 
 def general_annotation(key):
   return key.startswith('_')
+
+
+def intermediate_token(item):
+  return '__value__' in item.keys()
+
+
+def leaf_token(item):
+  return isinstance(item, dict) and 'help' in item.keys()
+
+
+def parse_parameter_label(id):
+  # '.{dynamic_token}/path' -> 'Dynamic Path'
+  l1, *l2 = id.split('/')
+  l1 = parse_key(l1).title().rsplit('_', 1)[0]
+  return (' ').join([l1, *l2])
 
 
 def create_parameters(data, attr_paths):
@@ -183,8 +209,6 @@ def create_parameters(data, attr_paths):
   for att, path in attr_paths.items():
     params = []
     values = value_from_path(data, path.split('/'))
-    keys = filter(lambda x: not general_annotation(x), values.keys())
-    keys = list(filter(lambda x: not dynamic_key(x), keys))
     param = find_pararms(att, values)
     for id, p in param.items():
       params.append(_create_parameters(path, id, p))
