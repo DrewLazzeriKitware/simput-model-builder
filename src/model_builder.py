@@ -74,10 +74,10 @@ def find_pararms(att, data, id='', params=None):
   params = {} if params is None else params
   for key, value in data.items():
     if isinstance(value, dict):
-      if 'help' not in value.keys() and not dynamic_key(key):
+      if 'help' not in value.keys():
+        if dynamic_key(key) and '_' in att:
+          params[f'{parse_key(key)}_'] = value
         find_pararms(att, value, f'{key}/', params)
-      elif dynamic_key(key) and '_' in att:
-        params[f'{parse_key(key)}_'] = value
       elif not dynamic_key(key):
         params[f'{id}{key}'] = value
   
@@ -104,7 +104,7 @@ def _create_parameters(path, id, data):
 
   param = {
     'id': param_id,
-    'label': (' ').join([l1, *l2]),
+    'label': label,
     'size': 1
   }
 
