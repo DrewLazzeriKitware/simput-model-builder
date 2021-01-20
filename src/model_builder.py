@@ -198,9 +198,13 @@ def leaf_token(item):
 
 def parse_parameter_label(id):
   # '.{dynamic_token}/path' -> 'Dynamic Path'
-  l1, *l2 = id.split('/')
-  l1 = parse_key(l1).title().rsplit('_', 1)[0]
-  return (' ').join([l1, *l2])
+  label = []
+  for value in id.split('/'):
+    item = parse_key(value)
+    if item[0].islower():
+      item = item.title()
+    label.append(item.rsplit('_', 1)[0])
+  return (' ').join(label)
 
 
 def create_parameters(data, attr_paths):
