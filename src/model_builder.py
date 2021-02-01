@@ -77,14 +77,13 @@ def find_pararms(att, data, id='', params=None):
   params = {} if params is None else params
   for key, value in data.items():
     if isinstance(value, dict):
-      if leaf_token(value):
+      if leaf_token(value) and not general_annotation(key):
         params[f'{id}{key}'] = value
       else:
         if dynamic_token(key) and dynamic_view(att):
           params[f'{parse_key(key)}_'] = value
         elif intermediate_token(value):
-          value = value['__value__']
-          params[f'{id}{key}'] = value
+          params[f'{id}{key}'] = value['__value__']
         find_pararms(att, value, f'{id}{key}/', params)
   
   return params
