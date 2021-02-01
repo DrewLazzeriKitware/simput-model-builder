@@ -9,13 +9,14 @@ model = {
 
 # Name Parameter
 def name_param(att_name):
-  param_id = att_name.split('/')[1]
+  parent, param_id = att_name.split('/')
   param_id = param_id.replace('.{', '').replace('}', '')
   name = [{
     'id': f'{param_id}_',
     'label': 'Name',
     'size': 1,
-    'type': 'string'
+    'type': 'string',
+    'help': f'User-defined instance from {parent} Names'
   }]
 
   return name
