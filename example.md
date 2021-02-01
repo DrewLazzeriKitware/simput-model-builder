@@ -30,3 +30,7 @@ To set up a local Simput instance and use the provided script to create the mode
     Open http://localhost:9999 in your browser.
 
     Click the `ParFlow` card to view the generated forms.
+
+6. Populate the model:
+
+        Drag and drop the default_richards_model.json file (found in the sample_data directory) anywhere in the form.
