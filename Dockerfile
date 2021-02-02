@@ -17,11 +17,11 @@ RUN git clone https://github.com/parflow/parflow.git
 # Sanity check
 RUN python3 src/model_builder.py --help 
 
-# Run on included data
-RUN mkdir output
-RUN python3 src/model_builder.py -o . -d parflow/pf-keys/definitions/ -f sample_data/*.json
-CMD cat model.json
+# Use sample data to make model
+# RUN python3 src/model_builder.py -o . -d parflow/pf-keys/definitions/ -f sample_data/*.json
+# CMD cat model.json
 
-# Run on our washita data
-# COPY LW_Test.pfidb LW_Test.pfidb
-# RUN ls
+# Use washita data to make model
+COPY ./LW_Test.pfidb ./LW_Test.pfidb
+RUN python3 src/model_builder.py -o . -d parflow/pf-keys/definitions/ -f ./LW_Test.pfidb
+CMD cat model.json
