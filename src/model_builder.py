@@ -252,3 +252,6 @@ def cli(output, directory, file):
 
   with open(f'{output}/model.json', 'w', encoding='utf8') as f:
     json.dump(model, f, ensure_ascii=False)
+
+if __name__ == '__main__':
+    cli()
