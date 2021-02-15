@@ -14,14 +14,8 @@ COPY src/model_builder.py src/model_builder.py
 RUN chmod +x src/model_builder.py
 RUN git clone https://github.com/parflow/parflow.git
 
-# Sanity check
-RUN python3 src/model_builder.py --help 
+RUN python3 src/model_builder.py --help # Sanity check
 
 # Use sample data to make model
-# RUN python3 src/model_builder.py -o . -d parflow/pf-keys/definitions/ -f sample_data/*.json
-# CMD cat model.json
-
-# Use washita data to make model
-COPY ./LW_Test.pfidb ./LW_Test.pfidb
-RUN python3 src/model_builder.py -o . -d parflow/pf-keys/definitions/ -f ./LW_Test.pfidb
+RUN python3 src/model_builder.py -o . -d parflow/pf-keys/definitions/
 CMD cat model.json
